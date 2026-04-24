@@ -230,6 +230,7 @@ Each step should produce a clean, reviewable commit.
 Current phase:
 
 - service contract defined
-- implementation not started yet
+- FastAPI bootstrap completed
+- CRUD not implemented yet
 
-The next step is to bootstrap the FastAPI app and PostgreSQL configuration without adding the full CRUD logic yet.
+The next step is to add the note model and database table setup before implementing CRUD endpoints.
