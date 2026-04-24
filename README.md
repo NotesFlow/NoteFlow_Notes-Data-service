@@ -86,7 +86,7 @@ The service manages the `notes` table with this minimum structure:
 
 Current SQLAlchemy model:
 
-- [app/models/note.py](/mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Notes-Data-service/app/models/note.py)
+- [app/models/note.py](app/models/note.py)
 
 ## Business Rules At This Layer
 
@@ -105,7 +105,7 @@ Authentication remains out of scope for this service.
 
 The service uses environment-based configuration.
 
-Defined in [.env.example](/mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Notes-Data-service/.env.example):
+Defined in [.env.example](.env.example):
 
 ```env
 NOTES_DATA_SERVICE_HOST=0.0.0.0
