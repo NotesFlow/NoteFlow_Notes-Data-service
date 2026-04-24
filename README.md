@@ -1,58 +1,79 @@
 # NoteFlow Notes Data Service
 
-Internal microservice responsible for note persistence in the `NoteFlow` project.
+`notes-data-service` is the internal persistence microservice for the `NoteFlow` project.
 
-This service is part of the application layer and exists only to manage note data in PostgreSQL. It is intentionally simple and does not implement authentication or public-facing business logic.
+It connects directly to PostgreSQL and manages the `notes` table. This service is intentionally simple: it does not authenticate users, does not validate JWT tokens, and is not meant to be called directly by an external client.
 
-## Purpose
+## Responsibilities
 
-`notes-data-service` is the direct persistence layer for notes.
+This service is responsible for:
 
-Its responsibilities are:
+- connecting to PostgreSQL
+- creating and managing the `notes` table
+- exposing internal CRUD endpoints for notes
+- filtering all note operations by `user_id`
 
-- connect directly to PostgreSQL
-- manage the `notes` table
-- expose internal CRUD endpoints for notes
-- filter operations by `user_id`
+This service is not responsible for:
 
-Its constraints are:
+- registration or login
+- JWT validation
+- public API concerns
+- higher-level note business rules that belong in `notes-service`
 
-- it must not authenticate users
-- it must not validate JWT tokens
-- it must not expose public client endpoints
-- it must not contain higher-level business logic that belongs in `notes-service`
+## Role In The Architecture
 
-## Service Role In The Architecture
-
-Within the NoteFlow architecture:
-
-- `auth-service` handles registration, login, JWT generation, and current-user validation
-- `notes-service` exposes the public notes API, validates the authenticated user, and applies business rules
-- `notes-data-service` performs direct database operations for notes
-
-The expected flow is:
+The expected application flow is:
 
 1. the client calls `notes-service`
-2. `notes-service` validates the user and request payload
+2. `notes-service` validates the authenticated user
 3. `notes-service` calls `notes-data-service`
-4. `notes-data-service` reads or writes notes in PostgreSQL
+4. `notes-data-service` performs direct database operations
 
-## MVP Scope
+Within NoteFlow:
 
-The service must support the note persistence needs for:
+- `auth-service` handles identity and authentication
+- `notes-service` handles public note endpoints and business logic
+- `notes-data-service` handles direct note persistence
 
-- create note
-- list notes
-- update note
-- delete note
-- archive note
-- pin note
+## Tech Stack
 
-This service is internal, so all operations are expected to receive a `user_id` provided by `notes-service`.
+- Python
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Uvicorn
+
+## Project Structure
+
+```text
+app/
+  api/
+    routes/
+  core/
+  db/
+  dependencies/
+  models/
+  schemas/
+  services/
+  main.py
+requirements.txt
+.env.example
+README.md
+```
+
+Directory purpose:
+
+- `api/routes` contains the FastAPI routes
+- `core` contains runtime configuration
+- `db` contains the SQLAlchemy base, engine, and session setup
+- `dependencies` contains reusable FastAPI dependencies
+- `models` contains SQLAlchemy models
+- `schemas` contains request and response models
+- `services` contains note data operations
 
 ## Data Model
 
-The minimum `notes` table structure is:
+The service manages the `notes` table with this minimum structure:
 
 - `id`: integer primary key
 - `user_id`: integer not null
@@ -63,34 +84,135 @@ The minimum `notes` table structure is:
 - `created_at`: datetime
 - `updated_at`: datetime
 
-## Business Rules Enforced At This Layer
+Current SQLAlchemy model:
 
-This service should keep its rules minimal and data-oriented:
+- [app/models/note.py](/mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Notes-Data-service/app/models/note.py)
 
-- every read must be filtered by `user_id`
-- every write must target only a note that belongs to the provided `user_id`
+## Business Rules At This Layer
+
+The rules enforced here are intentionally minimal:
+
+- a note is always associated with a `user_id`
+- list operations are filtered by `user_id`
+- update, delete, archive, and pin only affect notes owned by the provided `user_id`
 - `title` is required
 - `content` may be empty
+- if a note does not exist for the given `user_id`, the service returns `404`
 
-Authentication and user identity validation are out of scope here.
+Authentication remains out of scope for this service.
 
-## Internal API Contract
+## Environment Variables
 
-These endpoints are internal and intended to be called by `notes-service`.
+The service uses environment-based configuration.
+
+Defined in [.env.example](/mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Notes-Data-service/.env.example):
+
+```env
+NOTES_DATA_SERVICE_HOST=0.0.0.0
+NOTES_DATA_SERVICE_PORT=8003
+
+DATABASE_HOST=127.0.0.1
+DATABASE_PORT=5433
+DATABASE_NAME=noteflow
+DATABASE_USER=noteflow_user
+DATABASE_PASSWORD=noteflow_pass
+```
+
+Important local note:
+
+- `DATABASE_HOST=127.0.0.1` is correct for the current local setup
+- PostgreSQL is expected to be exposed on port `5433`
+
+## Installation
+
+Create and activate a virtual environment, then install dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create a local `.env` file based on `.env.example`.
+
+## Running PostgreSQL
+
+The project currently uses PostgreSQL from the infrastructure repository.
+
+Start it from:
+
+```bash
+cd /mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Infrastructure
+docker compose -f docker-compose.dev.yml up -d
+```
+
+## Running The Service Locally
+
+From the service repository:
+
+```bash
+cd /mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Notes-Data-service
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8003
+```
+
+Swagger UI:
+
+```text
+http://127.0.0.1:8003/docs
+```
+
+## Health Endpoints
+
+### `GET /health`
+
+Checks whether the service is running.
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "service": "NoteFlow Notes Data Service",
+  "version": "0.1.0"
+}
+```
+
+### `GET /health/db`
+
+Checks whether the service can reach PostgreSQL.
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "database": "connected"
+}
+```
+
+## Internal API Endpoints
+
+These endpoints are internal and are meant to be called later by `notes-service`.
 
 ### `GET /internal/notes`
 
-Returns the notes for a given user.
+Returns notes for a given user.
 
-Expected query parameters:
+Query parameters:
 
 - `user_id`
+
+Response:
+
+- `200 OK`
+- list of note objects
 
 ### `POST /internal/notes`
 
 Creates a new note.
 
-Expected request body:
+Request body:
 
 ```json
 {
@@ -100,11 +222,16 @@ Expected request body:
 }
 ```
 
-### `PUT /internal/notes/{id}`
+Response:
 
-Updates an existing note that belongs to the provided `user_id`.
+- `201 Created`
+- created note object
 
-Expected request body:
+### `PUT /internal/notes/{note_id}`
+
+Updates an existing note for the provided `user_id`.
+
+Request body:
 
 ```json
 {
@@ -114,19 +241,30 @@ Expected request body:
 }
 ```
 
-### `DELETE /internal/notes/{id}`
+Response:
 
-Deletes an existing note that belongs to the provided `user_id`.
+- `200 OK`
+- updated note object
+- `404 Not Found` if the note does not belong to that `user_id`
 
-Expected query parameters:
+### `DELETE /internal/notes/{note_id}`
+
+Deletes a note for the provided `user_id`.
+
+Query parameters:
 
 - `user_id`
 
-### `PATCH /internal/notes/{id}/archive`
+Response:
 
-Updates the archive flag for a note that belongs to the provided `user_id`.
+- `204 No Content`
+- `404 Not Found` if the note does not belong to that `user_id`
 
-Expected request body:
+### `PATCH /internal/notes/{note_id}/archive`
+
+Changes the archive flag for a note.
+
+Request body:
 
 ```json
 {
@@ -135,11 +273,16 @@ Expected request body:
 }
 ```
 
-### `PATCH /internal/notes/{id}/pin`
+Response:
 
-Updates the pin flag for a note that belongs to the provided `user_id`.
+- `200 OK`
+- updated note object
 
-Expected request body:
+### `PATCH /internal/notes/{note_id}/pin`
+
+Changes the pin flag for a note.
+
+Request body:
 
 ```json
 {
@@ -148,91 +291,115 @@ Expected request body:
 }
 ```
 
-## Planned Response Shape
+Response:
 
-The implementation should aim for a clean, predictable response format based on the note resource itself.
+- `200 OK`
+- updated note object
 
-Expected note shape:
+## Manual Testing
+
+Use Swagger only.
+
+Open:
+
+```text
+http://127.0.0.1:8003/docs
+```
+
+Recommended order:
+
+1. `GET /health`
+2. `GET /health/db`
+3. `POST /internal/notes`
+4. `GET /internal/notes`
+5. `PUT /internal/notes/{note_id}`
+6. `PATCH /internal/notes/{note_id}/archive`
+7. `PATCH /internal/notes/{note_id}/pin`
+8. `DELETE /internal/notes/{note_id}`
+
+Suggested payloads:
+
+Create note:
 
 ```json
 {
-  "id": 1,
   "user_id": 1,
-  "title": "My note",
-  "content": "Example content",
-  "is_archived": false,
-  "is_pinned": false,
-  "created_at": "2026-04-24T10:00:00Z",
-  "updated_at": "2026-04-24T10:00:00Z"
+  "title": "First internal note",
+  "content": "Created from Swagger"
 }
 ```
 
-## Planned Project Structure
+Update note:
 
-The service will be implemented with a structure similar to:
-
-```text
-app/
-  api/
-    routes/
-  core/
-  db/
-  models/
-  schemas/
-  services/
-  main.py
-requirements.txt
-.env.example
-README.md
+```json
+{
+  "user_id": 1,
+  "title": "Updated internal note",
+  "content": "Updated from Swagger"
+}
 ```
 
-The structure keeps responsibilities separate:
+Archive note:
 
-- `api/routes` for FastAPI endpoints
-- `core` for configuration
-- `db` for engine, session, and base setup
-- `models` for SQLAlchemy models
-- `schemas` for request and response models
-- `services` for note data operations
+```json
+{
+  "user_id": 1,
+  "is_archived": true
+}
+```
 
-## Configuration Contract
+Pin note:
 
-The service is expected to use environment variables for runtime configuration.
+```json
+{
+  "user_id": 1,
+  "is_pinned": true
+}
+```
 
-The initial contract is:
+For:
 
-- `NOTES_DATA_SERVICE_HOST`
-- `NOTES_DATA_SERVICE_PORT`
-- `DATABASE_HOST`
-- `DATABASE_PORT`
-- `DATABASE_NAME`
-- `DATABASE_USER`
-- `DATABASE_PASSWORD`
+- `GET /internal/notes`
+- `DELETE /internal/notes/{note_id}`
 
-See `.env.example` for the baseline values expected during local development.
+set `user_id` as a query parameter in Swagger.
 
-## Implementation Order
+## Validation And Error Behavior
 
-This repository should be developed in small steps:
+Expected behavior:
 
-1. define the service contract and configuration
-2. bootstrap the FastAPI application and database wiring
-3. add the note model and table setup
-4. implement create and list operations
-5. implement update, delete, archive, and pin
-6. test manually against PostgreSQL
-7. finalize documentation
-
-Each step should produce a clean, reviewable commit.
+- missing or invalid `user_id` -> validation error
+- empty `title` -> validation error
+- note not found for the given `user_id` -> `404`
+- successful delete -> `204`
 
 ## Current Status
 
-Current phase:
+Current implementation status:
 
-- service contract defined
-- FastAPI bootstrap completed
-- note model and table setup completed
-- create and list endpoints completed
+- FastAPI app bootstrap completed
+- PostgreSQL wiring completed
+- `notes` table setup completed
 - internal CRUD endpoints completed
+- verified against the local PostgreSQL container
 
-The next step is to verify the full internal CRUD flow manually and finalize the service documentation.
+Verified flow:
+
+- create note
+- list notes
+- update note
+- archive note
+- pin note
+- delete note
+- `404` after attempting to modify a deleted note
+
+## Next Integration Step
+
+The next service to implement is `notes-service`.
+
+That service will:
+
+- validate the authenticated user
+- expose public note endpoints
+- call `notes-data-service`
+- keep public business logic outside the persistence layer
