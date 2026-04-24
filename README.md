@@ -231,6 +231,7 @@ Current phase:
 
 - service contract defined
 - FastAPI bootstrap completed
+- note model and table setup completed
 - CRUD not implemented yet
 
-The next step is to add the note model and database table setup before implementing CRUD endpoints.
+The next step is to implement create and list operations for notes.

@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 
+import app.models
 from app.core.config import settings
+from app.db.base import Base
 from app.db.session import engine
 
 app = FastAPI(
@@ -9,6 +11,11 @@ app = FastAPI(
     version=settings.APP_VERSION,
     debug=settings.DEBUG,
 )
+
+
+@app.on_event("startup")
+def on_startup():
+    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health")
