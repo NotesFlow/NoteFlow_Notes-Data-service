@@ -169,6 +169,25 @@ Swagger UI:
 http://127.0.0.1:8003/docs
 ```
 
+## Running With Docker
+
+Build the image:
+
+```bash
+docker build -t noteflow-notes-data-service .
+```
+
+Run the container:
+
+```bash
+docker run --rm -p 8003:8003 --env-file .env noteflow-notes-data-service
+```
+
+Important Docker note:
+
+- for local standalone Docker usage, `DATABASE_HOST` should point to the PostgreSQL host visible from the container runtime
+- for Docker Compose usage inside the NoteFlow infrastructure stack, `DATABASE_HOST` should be `postgres`
+
 ## Automated Tests
 
 Run the automated tests with:
