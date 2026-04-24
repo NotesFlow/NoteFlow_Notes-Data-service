@@ -233,6 +233,6 @@ Current phase:
 - FastAPI bootstrap completed
 - note model and table setup completed
 - create and list endpoints completed
-- remaining CRUD not implemented yet
+- internal CRUD endpoints completed
 
-The next step is to implement update, delete, archive, and pin operations.
+The next step is to verify the full internal CRUD flow manually and finalize the service documentation.
