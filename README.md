@@ -57,6 +57,7 @@ app/
   services/
   main.py
 requirements.txt
+requirements-dev.txt
 .env.example
 README.md
 ```
@@ -133,6 +134,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+For local test execution:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
 Create a local `.env` file based on `.env.example`.
 
 ## Running PostgreSQL
@@ -161,6 +168,26 @@ Swagger UI:
 ```text
 http://127.0.0.1:8003/docs
 ```
+
+## Automated Tests
+
+Run the automated tests with:
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The current test suite covers:
+
+- create note
+- list notes
+- update note
+- archive note
+- pin note
+- delete note
+- filtering by `user_id`
+- `404` on note access after deletion
 
 ## Health Endpoints
 
