@@ -42,6 +42,7 @@ Within NoteFlow:
 - SQLAlchemy
 - PostgreSQL
 - Uvicorn
+- Prometheus metrics
 
 ## Project Structure
 
@@ -169,6 +170,12 @@ Swagger UI:
 http://127.0.0.1:8003/docs
 ```
 
+Prometheus metrics:
+
+```text
+http://127.0.0.1:8003/metrics
+```
+
 ## Running With Docker
 
 Build the image:
@@ -209,6 +216,10 @@ The current test suite covers:
 - `404` on note access after deletion
 
 ## Health Endpoints
+
+### `GET /metrics`
+
+Exposes Prometheus-compatible HTTP metrics for monitoring.
 
 ### `GET /health`
 
