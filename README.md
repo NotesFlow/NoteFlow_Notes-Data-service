@@ -195,6 +195,28 @@ Important Docker note:
 - for local standalone Docker usage, `DATABASE_HOST` should point to the PostgreSQL host visible from the container runtime
 - for Docker Compose usage inside the NoteFlow infrastructure stack, `DATABASE_HOST` should be `postgres`
 
+## CI/CD
+
+GitHub Actions workflow:
+
+- [.github/workflows/docker-image.yml](.github/workflows/docker-image.yml)
+
+The workflow runs tests, builds the Docker image, and publishes it to Docker Hub on pushes to `main`.
+
+Docker Hub image:
+
+- `albertart10/noteflow-notes-data-service`
+
+Published tags:
+
+- `latest`
+- `sha-<commit-sha>`
+
+Required GitHub Actions secrets:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
 ## Automated Tests
 
 Run the automated tests with:
