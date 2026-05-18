@@ -150,7 +150,7 @@ The project currently uses PostgreSQL from the infrastructure repository.
 Start it from:
 
 ```bash
-cd /mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Infrastructure
+cd ../NoteFlow_Infrastructure
 docker compose -f docker-compose.dev.yml up -d
 ```
 
@@ -159,7 +159,6 @@ docker compose -f docker-compose.dev.yml up -d
 From the service repository:
 
 ```bash
-cd /mnt/c/Users/Albert/Desktop/NoteFlow/NoteFlow_Notes-Data-service
 source .venv/bin/activate
 uvicorn app.main:app --reload --port 8003
 ```
@@ -272,7 +271,7 @@ Example response:
 
 ## Internal API Endpoints
 
-These endpoints are internal and are meant to be called later by `notes-service`.
+These endpoints are internal and are meant to be called by `notes-service`.
 
 ### `GET /internal/notes`
 
@@ -460,7 +459,11 @@ Current implementation status:
 - PostgreSQL wiring completed
 - `notes` table setup completed
 - internal CRUD endpoints completed
-- verified against the local PostgreSQL container
+- Prometheus metrics completed
+- automated tests completed
+- Docker image build and publication through GitHub Actions completed
+- verified against PostgreSQL in the local Docker stack
+- deployed in Swarm through the infrastructure repository
 
 Verified flow:
 
@@ -472,13 +475,12 @@ Verified flow:
 - delete note
 - `404` after attempting to modify a deleted note
 
-## Next Integration Step
+## Final Integration
 
-The next service to implement is `notes-service`.
+In the final NoteFlow stack:
 
-That service will:
-
-- validate the authenticated user
-- expose public note endpoints
-- call `notes-data-service`
-- keep public business logic outside the persistence layer
+- this service is internal and should not be called by external clients
+- `notes-service` validates the authenticated user and forwards user-scoped note operations here
+- `postgres` stores the `notes` table
+- `prometheus` scrapes `/metrics`
+- Docker Swarm runs the published Docker Hub image `albertart10/noteflow-notes-data-service:latest`
